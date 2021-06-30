@@ -9,3 +9,5 @@ In particular, the file "tf_evoked.py" computes the powers of the evoked signals
 Then, "permutation_cluster_test_evoked.py" and "permutation_cluster_test_induced.py" load the powers respectively of the evoked and the induced signals
 and they perform the permutation cluster tests.
 Lastly, "clusters_visualisation.py" shows the results of the tests.
+
+Finally, the data used exceeds the maximum storage space and for this reason is not loaded.
