@@ -23,20 +23,24 @@ for filename in os.listdir('SCdataNew/'):
 print(len(filenames))
 print(filenames)
 
-#%% load the results
-#4: lots of clusters, threshold t=5
-#5: threshold with t=0.5, few clusters
-#6: threshold with t=1, more clusters
-#7: threshold with t=25
+#%% load the results, select one of the different results
+
+#4: induced threshold t=5
+#5: induced threshold with t=0.5
+#6: induced threshold with t=1
+#7: induced threshold with t=25
 #evoked_1: evoked without threshold
 #evoked_2: evoked threshold t=0.5
 #evoked_3: evoked threshold t=10
-#evoked_unified_1: without threshold
-#evoked_unified_2: threshold t=5
+#evoked_unified_1: without threshold, audio events unified
+#evoked_unified_2: threshold t=5, audio events unified
+#8: induced no threshold selected, audio events unified
 with open('cluster_tests_evoked_unified_2.pickle', 'rb') as handle:
     results = pickle.load(handle)
 
 #%% global variables needed later on
+
+#event_id is a dictionary that stores all the event numbers
 event_id = { "Visual 'b' high":1,"Visual 'b' medium":2, "Visual 'b' low":3,
 "Visual 'g' high":4, "Visual 'g' medium":5, "Visual 'g' low":6,
 "Audio 'b' high":7, "Audio 'b' medium":8, "Audio 'b' low":9,
@@ -47,18 +51,17 @@ event_id = { "Visual 'b' high":1,"Visual 'b' medium":2, "Visual 'b' low":3,
 "AudioVisual fusion sync low":21, "AudioVisual fusion Async high":22,
 "AudioVisual fusion Async medium":23, "AudioVisual fusion Async low":24}
 
+#combinations_3 stores the indexes of the signals to combine
 combinations_3 = { #"fusion_vg_high" : [4,7,19], "fusion_vg_medium" : [5,8,20], "fusion_vg_low" : [6,9,21],
 "av_b_high" : [1,7,13], "av_b_medium" : [2,7,14], "av_b_low" : [3,7,15],
 "av_g_high" : [4,10,16], "av_g_medium" : [5,10,17], "av_g_low" : [6,10,18]
 }
 
+#combinations_2 as well but for two signals
 combinations_2 = {"visual_low" : [3,6], "audio_low": [7,10], "av_b_hm" : [13,14], "av_b_ml": [14,15],
 "av_b_hl": [13,15], "av_g_hm": [16,17], "av_g_ml": [17,18], "av_g_hl": [16,18]}
 
-freqs = np.array([4,6,8,10,12,14,16])
-n_cycles = 4  
-idx_ch = [0,1,2,3,4,33,36]
-#%% show combin_2
+#%% show combin_2 clusters and informations
 for combin in combinations_2:
     print(combin)
     time = []
@@ -100,7 +103,7 @@ for combin in combinations_2:
     print()
     print()
 
-#%% show combin_3
+#%% show combin_3 clusters and informations
 for combin in combinations_3:
     print(combin)
     time = []
@@ -141,28 +144,3 @@ for combin in combinations_3:
             print("channels: \tmin:", min(channels),"; \tmax:", max(channels))
     print()
     print()
-# %%
-_ = plt.scatter(time,time)#, 'ro')
-# %%
-results[combin][1][1][0]
-#%%
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-#x = np.array(x)
-#y = np.array(y)
-#z = np.array(z)
-
-ax.scatter(time,freq,channels, marker="o", c=c, s=1, cmap="RdBu")
-ax.set_xlabel('time [ms]')
-ax.set_ylabel('fequency [Hz]')
-ax.set_zlabel('channels')
-plt.show()
-# %%
-print("time: ", min(time), max(time))
-print("freq: ", min(freq), max(freq))
-print("channels: ", min(channels), max(channels))
-# %%
-results[combin][2][1]
-# %%
-combinations_2|combinations_3
-# %%
