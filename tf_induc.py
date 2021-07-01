@@ -142,7 +142,7 @@ a_subset = {key: value for key, value in ev.items() if key in keys}
 audio = ["e01","e02","e03","e04","e05","e34","e37"]
 mne.viz.plot_compare_evokeds(a_subset, combine="mean", picks=audio, vlines=[0,0.58], styles={key: {"linewidth" : 0.75} for key, value in ev.items() if key in keys})
 
-#%%read the powers and display them
+#%%read the powers
 power_per_person_per_id = {}
 for filename in filenames:
     print(filename)

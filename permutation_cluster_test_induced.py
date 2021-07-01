@@ -25,6 +25,8 @@ print(len(filenames))
 print(filenames)
 
 #%% global variables needed later on
+
+#event_id is a dictionary that stores all the event numbers
 event_id = { "Visual 'b' high":1,"Visual 'b' medium":2, "Visual 'b' low":3,
 "Visual 'g' high":4, "Visual 'g' medium":5, "Visual 'g' low":6,
 "Audio 'b' high":7, "Audio 'b' medium":8, "Audio 'b' low":9,
@@ -35,11 +37,13 @@ event_id = { "Visual 'b' high":1,"Visual 'b' medium":2, "Visual 'b' low":3,
 "AudioVisual fusion sync low":21, "AudioVisual fusion Async high":22,
 "AudioVisual fusion Async medium":23, "AudioVisual fusion Async low":24}
 
+#combinations_3 stores the indexes of the signals to combine
 combinations_3 = { #"fusion_vg_high" : [4,7,19], "fusion_vg_medium" : [5,8,20], "fusion_vg_low" : [6,9,21],
 "av_b_high" : [1,7,13], "av_b_medium" : [2,8,14], "av_b_low" : [3,9,15],
 "av_g_high" : [4,10,16], "av_g_medium" : [5,11,17], "av_g_low" : [6,12,18]
 }
 
+#combinations_2 as well but for two signals
 combinations_2 = {"visual_low" : [3,6], "audio_low": [9,12], "av_b_hm" : [13,14], "av_b_ml": [14,15],
 "av_b_hl": [13,15], "av_g_hm": [16,17], "av_g_ml": [17,18], "av_g_hl": [16,18],
 "fusion_vg_hm" : [19,20], "fusion_vg_ml" : [20,21],"fusion_vg_hl" : [19,21]}
@@ -54,7 +58,7 @@ for filename in filenames:
     print(filename, ", ", n,"/",len(filenames))
     n+=1
     power_per_person_per_id[filename] = mne.time_frequency.read_tfrs('./SCdataPowers_5/'+filename+'_id-tfr.h5')
-#%%
+#%% save the powers not only for person but also for id
 power_per_person_per_id_dict = {}
 for filename in filenames:
     power_per_person_per_id_dict[filename] = {}
@@ -87,10 +91,8 @@ plt.imshow(adj_matrix[0].toarray(), cmap='gray', origin='lower',
 plt.xlabel('{} sensors'.format(len(ch_names)))
 plt.ylabel('{} sensors'.format(len(ch_names)))
 plt.title('Between-sensor adjacency')
-#%%
-ch_names
+
 #%%build the adjacency for each feature
-#freq_adjacency = sparse.csr_matrix(np.zeros((7, 7)))
 chan_adjacency = adj_matrix[0]
 adjacency = mne.stats.combine_adjacency(184, 7, chan_adjacency) #freq_adjacency, chan_adjacency)
 print(np.swapaxes(power_per_person_per_id[filename][18].data,0,2).shape)
@@ -125,39 +127,23 @@ for combin in combinations_2:
 
     F_obs, clusters, cluster_pv, H0 = mne.stats.permutation_cluster_test(X=[X1, X2], adjacency=adjacency)
     results[combin] = [F_obs, clusters, cluster_pv, H0]
-#%%
-X1 = []
-X2 = [] 
-for filename in power_per_person_per_id:
-    X1.append(np.swapaxes(power_per_person_per_id[filename][16].data,0,2))
-    X2.append(np.swapaxes(power_per_person_per_id[filename][19].data,0,2))
-X1 = np.array(X1)
-X2 = np.array(X2)
 
-F_obs, clusters, cluster_pv, H0 = mne.stats.permutation_cluster_test(X=[X1, X2], adjacency=adjacency)
-
-#%%
-
-print("X1 shape (obser, times, freq, channels): ", X1.shape)
-print(X1[0])
-#print("adjacency matrix shape: ",adjacency.shape)
-#print("nr tests/len adjacency: ",np.prod(X1.shape)/adj_matrix[0].shape[0])
-#F_obs, clusters, cluster_pv, H0 = mne.stats.permutation_cluster_test(X=[X1, X2], adjacency=adjacency)
 #%% save the results
 #4: lots of clusters, threshold t=5
 #5: threshold with t=0.5, few clusters
 #6: threshold with t=1, more clusters
 #7: threshold with t=25
-#8: unified no threshold
+#8: unified no threshold selected
 
 with open('cluster_tests_8.pickle', 'wb') as handle:
     pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 #%% load the results
 with open('cluster_tests_7.pickle', 'rb') as handle:
     results = pickle.load(handle)
-#%%
-results.keys()
-#%%
+
+
+'''
+#%% statistics on the clusters
 combin = "fusion_vg_low"
 print("dimensions F_obs:")
 print("1st dim, time:\t\t",len(results[combin][0]))
@@ -174,9 +160,8 @@ print("1st dim, nr. clusters:\t",len(results[combin][2]))
 
 print("\ndimensions H0:")
 print("1st dim, nr. iterations:",len(results[combin][3]))
-#%%
-len(results[combin][1][2][0])
-#%% show them
+'''
+#%% show the results of the permutation test for combination_3
 for combin in combinations_3:
     print(combin)
     count = sum(map(lambda p : p<0.05, results[combin][2]))
@@ -192,12 +177,8 @@ for combin in combinations_3:
         print("total points: ", sum(nr))
         print(results[combin][2])
         print(nr)
-    #print(results[combin][2])
-    #_ = plt.plot(results[combin][2],'ro')
-    #plt.hlines([0.05,0.01],0,len(results[combin][2])-1,linestyles='dashed')
-    #plt.show()
     print()
-#%%
+#%% show the results of the permutation test for combination_2
 for combin in combinations_2:
     print(combin)
     count = sum(map(lambda p : p<0.05, results[combin][2]))
@@ -213,78 +194,4 @@ for combin in combinations_2:
         print(results[combin][2])
         print(nr)
     
-    #_ = plt.plot(results[combin][2],'ro')
-    #plt.hlines([0.05,0.01],0,len(results[combin][2])-1,linestyles='dashed')
-    #plt.show()
     print()
-#%%
-#for combin in combinations:
-#print(len(results[combin][2]))
-print("nr. clusters: ",len(results[combin][1]))
-print(len(results[combin][1][6]))
-for i in range(7):
-    for j in range(3):
-        print(len(results[combin][1][i][j]))
-
-#%%
-v = np.random.rand(10,4)
-v[:,3] = np.random.randint(0,2,size=10)
-print(len(v))
-print(len(v[0]))
-print(len(v[0][0]))
-df = pd.DataFrame(v, columns=['Feature1', 'Feature2','Feature3',"Cluster"])
-print (df)
-#%%
-print(len(results[combin][1]))
-print(len(results[combin][1][0]))
-print(len(results[combin][1][0][0]))
-print(type(results[combin][1][0][0]))
-#%%
-combin = "visual_low"
-
-x = []
-y = []
-z = []
-c = []
-v = []
-F_obs = results[combin][0]
-clusters = results[combin][1]
-for i in range(len(clusters)):
-    x.extend((results[combin][1][i][0]*(1.676+0.52)/184-0.52)*1000)
-    y.extend(results[combin][1][i][1]*2+4)
-    z.extend(results[combin][1][i][2]+1)
-    c.extend([i for j in range(len(results[combin][1][i][0]))])
-    #v.extend(F_obs[clusters[i]])
-#%%
-print(np.unique(clusters[0][1]))
-print(len(clusters[0][1]))
-#%%
-print(results[combin][0][0][0][0])
-#%%
-print(x)
-el = 0
-for i in range(7):
-    el = el+len(y[i])
-print(el)
-print(results[combin][1][0][2])
-#%%
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-#x = np.array(x)
-#y = np.array(y)
-#z = np.array(z)
-
-ax.scatter(x,y,z, marker="o", c=c, s=1, cmap="RdBu")
-ax.set_xlabel('time [ms]')
-ax.set_ylabel('fequency [Hz]')
-ax.set_zlabel('channels')
-plt.show()
-#%%
-print(np.unique(z))
-#%%
-power_per_person_per_id["SC46392"][0]
-#%%
-power_per_person_per_id["SC46392"]
-#%%
-power_per_person_per_id_dict["SC46392"]
-# %%
