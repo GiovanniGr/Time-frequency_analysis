@@ -17,7 +17,9 @@ for filename in os.listdir('SCdataNew/'):
 print(len(filenames))
 print(filenames)
 
-#%% global variables needed later on
+#%% global variables needed later on.
+
+#event_id is a dictionary that stores all the event numbers
 event_id = { "Visual 'b' high":1,"Visual 'b' medium":2, "Visual 'b' low":3,
 "Visual 'g' high":4, "Visual 'g' medium":5, "Visual 'g' low":6,
 "Audio 'b' high":7,# "Audio 'b' medium":8, "Audio 'b' low":9,
@@ -28,16 +30,10 @@ event_id = { "Visual 'b' high":1,"Visual 'b' medium":2, "Visual 'b' low":3,
 "AudioVisual fusion sync low":21, "AudioVisual fusion Async high":22,
 "AudioVisual fusion Async medium":23, "AudioVisual fusion Async low":24}
 
+#these variables are used for the power computation
 freqs = np.array([4,6,8,10,12,14,16])
 n_cycles = 4  
 idx_ch = [0,1,2,3,4,33,36] #ROI
-
-#ids = []
-#ids.append(list(event_id.keys())[0:6])
-#ids.append(list(event_id.keys())[6:12])
-#ids.append(list(event_id.keys())[12:18])
-#ids.append(list(event_id.keys())[18:21])
-#ids.append(list(event_id.keys())[21:24])
 
 #%% create the info
 ch_names = []
@@ -46,7 +42,7 @@ for i in range(1,10):
 for i in range(10,127):
     ch_names.append("e"+str(i))
 info = mne.create_info(ch_names, 250, 'eeg')
-#%%
+#%% compute the powers starting from the Matlab trials
 
 nr = 0 #counter
 for filename in filenames: #for each person:
@@ -92,6 +88,7 @@ for filename in filenames: #for each person:
         #compute the tf
         power_per_id.append(tfr_morlet(ave_ind_per_id[id], freqs=freqs, n_cycles=n_cycles, use_fft=True, decim=3, n_jobs=1, average=True, return_itc=False))
 
+    #save the results
     outfile = open('./SCdataEp_unified/'+filename+'.pkl','wb')
     pickle.dump(evok_per_id,outfile)
     outfile.close()
@@ -105,7 +102,7 @@ for filename in filenames: #for each person:
     mne.time_frequency.write_tfrs('./SCdataPowers_unified/'+filename+'_id-tfr.h5', power_per_id, overwrite=True)
 
 
-#%%
+#%% for visualisation purposes, combine the evoked of different users
 ev_per_id = {}
 for filename in filenames:
     print(filename)
@@ -121,7 +118,7 @@ for filename in filenames:
 ev = {}
 for event in event_id:
     ev[event] = mne.combine_evoked(ev_per_id[event], "equal")
-#%%
+#%% for visualisation purposes, combine the induced of different users
 av_ind_per_id = {}
 for filename in filenames:
     print(filename)
@@ -137,10 +134,8 @@ for filename in filenames:
 ev = {}
 for event in event_id:
     ev[event] = mne.combine_evoked(av_ind_per_id[event], "equal")
-#%%
-ev_per_id.keys()
-#%%
-a = [6,7]
+#%% show the erp signals
+a = [6,7] #choose the idx of the events to show
 keys = [list(ev.keys())[x] for x in a]
 print(keys)
 a_subset = {key: value for key, value in ev.items() if key in keys}
@@ -148,16 +143,10 @@ audio = ["e01","e02","e03","e04","e05","e34","e37"]
 mne.viz.plot_compare_evokeds(a_subset, combine="mean", picks=audio, vlines=[0,0.58], styles={key: {"linewidth" : 0.75} for key, value in ev.items() if key in keys})
 
 #%%read the powers and display them
-#power_per_stimulus = mne.time_frequency.read_tfrs('./SCdataPowers/'+filenames[0]+'_stimulus-tfr.h5')
-#for id in range(len(ids)):
-#        power_per_stimulus[id].plot(power_per_stimulus[id].ch_names, baseline=(-1.1, -0.6), mode='logratio', title=[filename,ids[id]], tmin=-0.8, tmax=0.8)
 power_per_person_per_id = {}
 for filename in filenames:
     print(filename)
     power_per_person_per_id[filename] = mne.time_frequency.read_tfrs('./SCdataPowers_5/'+filename+'_id-tfr.h5')
-#for id in range(len(filename)):
-#        power_per_id[id].plot(power_per_id[id].ch_names, baseline=(-0.52, 0), mode='logratio', title=[filename,list(event_id.keys())[id]], tmin=-0.2, tmax=1.2)
-
 #%% average over people, just for visualisation porpuses
 power_per_id = []
 for id in range(len(event_id)):
@@ -172,17 +161,3 @@ mne.time_frequency.write_tfrs('./SCdataPowers_unified/averagedOverPeople-tfr.h5'
 power_per_id = mne.time_frequency.read_tfrs('./SCdataPowers_unified/averagedOverPeople-tfr.h5')
 for id in range(len(event_id)):
     power_per_id[id].plot(idx_ch, mode='logratio', title="Power of "+list(event_id.keys())[id]+" in ROI", tmin=0.5, tmax=1.1)
-
-
-#%%
-montage = loadmat("montage.mat")
-ch_names = []
-for i in range(1, 6):
-    ch_names.append("e0"+str(i))
-ch_names.append("e34")
-ch_names.append("e37")
-diction_ch_positions = {k:v for k,v in zip(ch_names,montage["montage"]/10)}
-montage = mne.channels.make_dig_montage(diction_ch_positions)
-
-mne.viz.plot_montage(montage)
-# %%
